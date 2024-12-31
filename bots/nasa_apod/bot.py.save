@@ -1,0 +1,107 @@
+twitter_bot.py		twitter_bot.py.save	twitterbots
+danielpeters@daniels-MacBook-Pro twitterbots % ls ~/Documents/Twitter
+twitter_bot.py		twitter_bot.py.save	twitterbots
+danielpeters@daniels-MacBook-Pro twitterbots % cd ~/Documents/Twitter
+rm -rf ~/Documents/twitterbots
+danielpeters@daniels-MacBook-Pro Twitter % cp twitter_bot.py twitterbots/bots/nasa_apod/bot.py
+danielpeters@daniels-MacBook-Pro Twitter % ls twitterbots/bots/nasa_apod/
+bot.py
+danielpeters@daniels-MacBook-Pro Twitter % cd twitterbots/bots/nasa_apod/
+echo "tweepy
+requests
+python-dotenv
+schedule" > requirements.txt
+danielpeters@daniels-MacBook-Pro nasa_apod % cd ../../
+touch .github/workflows/nasa_apod.yml
+danielpeters@daniels-MacBook-Pro twitterbots % >....                            
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        cd bots/nasa_apod
+        pip install -r requirements.txt
+
+    - name: Run bot
+      env:
+        TWITTER_API_KEY: ${{ secrets.TWITTER_API_KEY }}
+        TWITTER_API_SECRET: ${{ secrets.TWITTER_API_SECRET }}
+        NASA_API_KEY: ${{ secrets.NASA_API_KEY }}
+      run: |
+        cd bots/nasa_apod
+        python bot.py
+EOL
+danielpeters@daniels-MacBook-Pro twitterbots % cd ~/Documents/Twitter/twitterbots/bots/nasa_apod/
+danielpeters@daniels-MacBook-Pro nasa_apod % nano bot.py
+
+  UW PICO 5.09                          File: bot.py                            
+
+from tweepy import Client, OAuth1UserHandler, API
+import requests
+import schedule
+import time
+from datetime import datetime
+from io import BytesIO
+
+# Twitter API credentials
+api_key = "MColSI3Nt3yaCORP2nVdrCyNk"
+api_secret = "0Ch3mAGEipOb61dQoDEzRVhb8GmpyuxVHzC35TKDBeFXMX4xxc"
+bearer_token = "AAAAAAAAAAAAAAAAAAAAAHi0xgEAAAAA4O3pUqskYFpQZk0yxzjTlweRSKU%3Dj$
+access_token = "1687133198579318784-DcnbO47TzA69H0Kv19SqdMh98nli0E"
+access_token_secret = "HVCmve3jWLrzcWcpAmTjVv4DyGG7idCjjNFsBb29Riyd5"
+
+# NASA API key
+nasa_api_key = "FuyzooQiAVHoT1t4TdpnjQC5zVYQxRubAYLVUr7U"
+
+def get_nasa_apod():
+
+import os
+from tweepy import Client, OAuth1UserHandler, API
+import requests
+import schedule
+import time
+from datetime import datetime
+from io import BytesIO
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+# Get credentials from environment variables
+TWITTER_API_KEY = os.getenv('TWITTER_API_KEY')
+TWITTER_API_SECRET = os.getenv('TWITTER_API_SECRET')
+TWITTER_BEARER_TOKEN = os.getenv('TWITTER_BEARER_TOKEN')
+TWITTER_ACCESS_TOKEN = os.getenv('TWITTER_ACCESS_TOKEN')
+TWITTER_ACCESS_SECRET = os.getenv('TWITTER_ACCESS_SECRET')
+NASA_API_KEY = os.getenv('NASA_API_KEY')
+
+def get_nasa_apod():
+    nasa_url = f"https://api.nasa.gov/planetary/apod?api_key={NASA_API_KEY}"
+    try:
+        response = requests.get(nasa_url)
+        response.raise_for_status()
+        data = response.json()
+        return data
+    except Exception as e:
+        print(f"Error getting APOD: {str(e)}")
+        return None
+
+def post_apod():
+    try:
+        # Set up Twitter authentication for media upload
+        auth = OAuth1UserHandler(
+            TWITTER_API_KEY, TWITTER_API_SECRET,
+            TWITTER_ACCESS_TOKEN, TWITTER_ACCESS_SECRET
+        )
+        api = API(auth)
+        
+        # Get APOD data
+        apod_data = get_nasa_apod()
+        
+                   # Upload media             media = api.media_upload(filename='apod                consumer_secret=T
