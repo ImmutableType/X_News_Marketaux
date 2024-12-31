@@ -1,24 +1,26 @@
+import os
 from tweepy import Client, OAuth1UserHandler, API
 import requests
-import schedule
-import time
 from datetime import datetime
 from io import BytesIO
+from dotenv import load_dotenv
 
-# Twitter API credentials
-api_key = 
-api_secret = 
-bearer_token = 
-access_token = 
-access_token_secret = 
+# Load environment variables
+load_dotenv()
 
-# NASA API key
-nasa_api_key = 
+# Get credentials from environment variables
+api_key = os.getenv('TWITTER_API_KEY')
+api_secret = os.getenv('TWITTER_API_SECRET')
+bearer_token = os.getenv('TWITTER_BEARER_TOKEN')
+access_token = os.getenv('TWITTER_ACCESS_TOKEN')
+access_token_secret = os.getenv('TWITTER_ACCESS_SECRET')
+nasa_api_key = os.getenv('NASA_API_KEY')
 
 def get_nasa_apod():
     nasa_url = f"https://api.nasa.gov/planetary/apod?api_key={nasa_api_key}"
     try:
         response = requests.get(nasa_url)
+        response.raise_for_status()
         data = response.json()
         return data
     except Exception as e:
@@ -40,6 +42,7 @@ def post_apod():
         if apod_data:
             # Download the image
             image_response = requests.get(apod_data['url'])
+            image_response.raise_for_status()
             image = BytesIO(image_response.content)
             
             # Upload media to Twitter
@@ -69,13 +72,6 @@ def post_apod():
     except Exception as e:
         print(f"Error: {str(e)}")
 
-# Schedule the job
-schedule.every().day.at("09:35").do(post_apod)
-
-# First post immediately
-post_apod()
-
-# Keep the script running
-while True:
-    schedule.run_pending()
-    time.sleep(60)  # Check every minute
+# When running in GitHub Actions, we don't need the scheduler
+if __name__ == "__main__":
+    post_apod()
