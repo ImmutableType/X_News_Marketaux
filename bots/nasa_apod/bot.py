@@ -2,7 +2,6 @@ import os
 from tweepy import Client, OAuth1UserHandler, API
 import requests
 from datetime import datetime
-from io import BytesIO
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -14,64 +13,69 @@ api_secret = os.getenv('TWITTER_API_SECRET')
 bearer_token = os.getenv('TWITTER_BEARER_TOKEN')
 access_token = os.getenv('TWITTER_ACCESS_TOKEN')
 access_token_secret = os.getenv('TWITTER_ACCESS_SECRET')
-nasa_api_key = os.getenv('NASA_API_KEY')
+marketaux_api_key = os.getenv('MARKETAUX_API_KEY')
 
-def get_nasa_apod():
-    nasa_url = f"https://api.nasa.gov/planetary/apod?api_key={nasa_api_key}"
+def get_market_news():
+    marketaux_url = f"https://api.marketaux.com/v1/news/all?api_token={marketaux_api_key}&language=en"
     try:
-        response = requests.get(nasa_url)
+        response = requests.get(marketaux_url)
         response.raise_for_status()
         data = response.json()
-        return data
+        return data['data'][:3]  # Get top 3 news items for the thread
     except Exception as e:
-        print(f"Error getting APOD: {str(e)}")
+        print(f"Error getting news: {str(e)}")
         return None
 
-def post_apod():
+def create_thread_text(news_items):
+    thread_texts = []
+    
+    # Create opening tweet
+    thread_texts.append("🚨 Latest Market News Update 📈\n\nTop stories:")
+    
+    # Add news items
+    for item in news_items:
+        text = (f"📰 {item['title']}\n\n"
+                f"{item['description'][:100]}...\n\n"
+                f"Source: {item['source']}")
+        thread_texts.append(text)
+    
+    return thread_texts
+
+def post_thread():
     try:
-        # Set up Twitter authentication for media upload
-        auth = OAuth1UserHandler(
-            api_key, api_secret,
-            access_token, access_token_secret
+        # Initialize client for tweeting
+        client = Client(
+            consumer_key=api_key,
+            consumer_secret=api_secret,
+            access_token=access_token,
+            access_token_secret=access_token_secret,
+            bearer_token=bearer_token
         )
-        api = API(auth)
         
-        # Get APOD data
-        apod_data = get_nasa_apod()
+        # Get news data
+        news_items = get_market_news()
         
-        if apod_data:
-            # Download the image
-            image_response = requests.get(apod_data['url'])
-            image_response.raise_for_status()
-            image = BytesIO(image_response.content)
+        if news_items:
+            # Create thread texts
+            thread_texts = create_thread_text(news_items)
             
-            # Upload media to Twitter
-            media = api.media_upload(filename='apod.jpg', file=image)
+            # Post initial tweet
+            previous_tweet_id = None
+            for i, text in enumerate(thread_texts):
+                if i == 0:
+                    response = client.create_tweet(text=text)
+                    previous_tweet_id = response.data['id']
+                else:
+                    response = client.create_tweet(
+                        text=text,
+                        in_reply_to_tweet_id=previous_tweet_id
+                    )
+                    previous_tweet_id = response.data['id']
             
-            # Create tweet text
-            title = apod_data.get('title', 'NASA APOD')
-            
-            # Initialize client for tweeting
-            client = Client(
-                consumer_key=api_key,
-                consumer_secret=api_secret,
-                access_token=access_token,
-                access_token_secret=access_token_secret,
-                bearer_token=bearer_token
-            )
-            
-            # Post tweet with media
-            response = client.create_tweet(
-                text=f"🔭 NASA Astronomy Picture of the Day\n\n{title}",
-                media_ids=[media.media_id]
-            )
-            
-            print(f"Tweet posted successfully at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}!")
-            print(f"Tweet ID: {response.data['id']}")
+            print(f"Thread posted successfully at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}!")
             
     except Exception as e:
         print(f"Error: {str(e)}")
 
-# When running in GitHub Actions, we don't need the scheduler
 if __name__ == "__main__":
-    post_apod()
+    post_thread()
